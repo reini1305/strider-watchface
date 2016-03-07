@@ -18,12 +18,12 @@ bool is_health_available() {
       time(NULL));
 }
 
-// Daily step goal, based on the weekly average
+// Daily step goal
 static void get_step_goal() {
   s_step_goal = (int)health_service_sum_averaged(HealthMetricStepCount,
     time_start_of_today(),
     time_start_of_today() + SECONDS_PER_DAY,
-    HealthServiceTimeScopeWeekly);
+    HealthServiceTimeScopeDaily);
 }
 
 // Todays current step count
