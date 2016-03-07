@@ -29,8 +29,6 @@ static void window_load(Window *window) {
 
 static void window_unload(Window *window) {
   layer_destroy(text_layer_get_layer(s_time_layer));
-  layer_destroy(s_window_layer);
-  window_destroy(s_window);
 }
 
 void init() {
@@ -38,20 +36,17 @@ void init() {
   s_window_layer = window_get_root_layer(s_window);
   window_set_background_color(s_window, GColorBlack);
 
-  window_set_window_handlers(s_window,
-                             (WindowHandlers) {
-                                 .load = window_load,
-                                 .unload = window_unload
-                             });
+  window_set_window_handlers(s_window, (WindowHandlers) {
+    .load = window_load,
+    .unload = window_unload
+  });
 
   window_stack_push(s_window, true);
 
   tick_timer_service_subscribe(MINUTE_UNIT, tick_handler);
 }
 
-void deinit() {
-
-}
+void deinit() {}
 
 int main() {
   init();
