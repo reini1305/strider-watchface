@@ -11,8 +11,7 @@ static int s_step_count = 0, s_step_goal = 0, s_step_average = 0;
 bool step_data_is_available() {
   return HealthServiceAccessibilityMaskAvailable &
     health_service_metric_accessible(HealthMetricStepCount,
-      time_start_of_today(),
-      time(NULL));
+      time_start_of_today(), time(NULL));
 }
 
 // Daily step goal
@@ -20,9 +19,7 @@ static void get_step_goal() {
   const time_t start = time_start_of_today();
   const time_t end = start + SECONDS_PER_DAY;
   s_step_goal = (int)health_service_sum_averaged(HealthMetricStepCount,
-    start,
-    end,
-    HealthServiceTimeScopeDaily);
+    start, end, HealthServiceTimeScopeDaily);
 }
 
 // Todays current step count
@@ -33,11 +30,9 @@ static void get_step_count() {
 // Average daily step count for this time of day
 static void get_step_average() {
   const time_t start = time_start_of_today();
-  const time_t end = start + (time(NULL) - start);
+  const time_t end = time(NULL);
   s_step_average = (int)health_service_sum_averaged(HealthMetricStepCount,
-    start,
-    end,
-    HealthServiceTimeScopeDaily);
+    start, end, HealthServiceTimeScopeDaily);
 }
 
 static void display_step_count() {
