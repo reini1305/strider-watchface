@@ -130,7 +130,7 @@ static void progress_layer_update_proc(Layer *layer, GContext *ctx) {
 
   graphics_fill_radial(ctx, inset, GOvalScaleModeFitCircle, 12,
     DEG_TO_TRIGANGLE(0),
-    DEG_TO_TRIGANGLE(360 * (s_step_count / s_step_goal)));
+    DEG_TO_TRIGANGLE((360 * s_step_count) / s_step_goal));
 }
 
 static void average_layer_update_proc(Layer *layer, GContext *ctx) {
