@@ -4,11 +4,18 @@ static Window *s_window;
 static Layer *s_window_layer, *s_dots_layer, *s_progress_layer, *s_average_layer;
 static TextLayer *s_time_layer, *s_step_layer;
 
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_DIORITE)
+static TextLayer *s_hrm_layer;
+static int s_hr;
+static char s_current_hr_buffer[8];
+#endif
+
 static char s_current_time_buffer[8], s_current_steps_buffer[16];
 static int s_step_count = 0, s_step_goal = 0, s_step_average = 0;
 
 GColor color_loser;
 GColor color_winner;
+
 
 // Is step data available?
 bool step_data_is_available() {
@@ -28,6 +35,13 @@ static void get_step_goal() {
 // Todays current step count
 static void get_step_count() {
   s_step_count = (int)health_service_sum_today(HealthMetricStepCount);
+}
+
+// Current heart rate
+static void get_hr() {
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_DIORITE)
+  s_hr = (int)health_service_peek_current_value(HealthMetricHeartRateBPM);
+#endif
 }
 
 // Average daily step count for this time of day
@@ -62,6 +76,17 @@ static void display_step_count() {
   text_layer_set_text(s_step_layer, s_current_steps_buffer);
 }
 
+static void display_heart_rate() {
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_DIORITE)
+  // if(s_hr>0) {
+    snprintf(s_current_hr_buffer,sizeof(s_current_hr_buffer),"%d \U00002764",s_hr);
+    text_layer_set_text(s_hrm_layer,s_current_hr_buffer);
+  // } else {
+    // layer_set_hidden(text_layer_get_layer(s_hrm_layer));
+  // }
+#endif
+}
+
 static void health_handler(HealthEventType event, void *context) {
   if(event == HealthEventSignificantUpdate) {
     get_step_goal();
@@ -71,6 +96,8 @@ static void health_handler(HealthEventType event, void *context) {
     get_step_count();
     get_step_average();
     display_step_count();
+    get_hr();
+    display_heart_rate();
     layer_mark_dirty(s_progress_layer);
     layer_mark_dirty(s_average_layer);
   }
@@ -141,7 +168,7 @@ static void window_load(Window *window) {
 
   // Create a layer to hold the current time
   s_time_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(82, 78), window_bounds.size.w, 38));
+      GRect(0, window_bounds.size.h/2-19, window_bounds.size.w, 38));
   text_layer_set_text_color(s_time_layer, GColorWhite);
   text_layer_set_background_color(s_time_layer, GColorClear);
   text_layer_set_font(s_time_layer,
@@ -151,13 +178,24 @@ static void window_load(Window *window) {
 
   // Create a layer to hold the current step count
   s_step_layer = text_layer_create(
-      GRect(0, PBL_IF_ROUND_ELSE(58, 54), window_bounds.size.w, 38));
+      GRect(0, window_bounds.size.h/2-43, window_bounds.size.w, 38));
   text_layer_set_background_color(s_step_layer, GColorClear);
   text_layer_set_font(s_step_layer,
                       fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
   text_layer_set_text_alignment(s_step_layer, GTextAlignmentCenter);
   layer_add_child(s_window_layer, text_layer_get_layer(s_step_layer));
 
+#if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_DIORITE)
+  // Create a layer to hold the current heart rate
+  s_hrm_layer = text_layer_create(
+      GRect(0, window_bounds.size.h/2+12, window_bounds.size.w, 38));
+  text_layer_set_background_color(s_hrm_layer, GColorClear);
+  text_layer_set_text_color(s_hrm_layer, GColorWhite);
+  text_layer_set_font(s_hrm_layer,
+                      fonts_get_system_font(FONT_KEY_GOTHIC_24_BOLD));
+  text_layer_set_text_alignment(s_hrm_layer, GTextAlignmentCenter);
+  layer_add_child(s_window_layer, text_layer_get_layer(s_hrm_layer));
+#endif
   // Subscribe to health events if we can
   if(step_data_is_available()) {
     health_service_events_subscribe(health_handler, NULL);
