@@ -78,12 +78,13 @@ static void display_step_count() {
 
 static void display_heart_rate() {
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_DIORITE)
-  // if(s_hr>0) {
+  if(s_hr>0) {
     snprintf(s_current_hr_buffer,sizeof(s_current_hr_buffer),"%d \U00002764",s_hr);
     text_layer_set_text(s_hrm_layer,s_current_hr_buffer);
-  // } else {
-    // layer_set_hidden(text_layer_get_layer(s_hrm_layer));
-  // }
+    layer_set_hidden(text_layer_get_layer(s_hrm_layer),false);
+  } else {
+    layer_set_hidden(text_layer_get_layer(s_hrm_layer),true);
+  }
 #endif
 }
 
@@ -124,11 +125,13 @@ static void dots_layer_update_proc(Layer *layer, GContext *ctx) {
 
 static void progress_layer_update_proc(Layer *layer, GContext *ctx) {
   const GRect inset = grect_inset(layer_get_bounds(layer), GEdgeInsets(2));
-
+#ifdef PBL_COLOR
   graphics_context_set_fill_color(ctx,
     s_step_count >= s_step_average ? color_winner : color_loser);
-
-  graphics_fill_radial(ctx, inset, GOvalScaleModeFitCircle, 12,
+#else
+graphics_context_set_fill_color(ctx, GColorLightGray);
+#endif
+  graphics_fill_radial(ctx, inset, GOvalScaleModeFitCircle, 8,
     DEG_TO_TRIGANGLE(0),
     DEG_TO_TRIGANGLE((360 * s_step_count) / s_step_goal));
 }
@@ -139,7 +142,7 @@ static void average_layer_update_proc(Layer *layer, GContext *ctx) {
   }
 
   const GRect inset = grect_inset(layer_get_bounds(layer), GEdgeInsets(2));
-  graphics_context_set_fill_color(ctx, GColorYellow);
+  graphics_context_set_fill_color(ctx, PBL_IF_COLOR_ELSE(GColorYellow,GColorWhite));
 
   int trigangle = DEG_TO_TRIGANGLE(360 * s_step_average / s_step_goal);
   int line_width_trigangle = 1000;

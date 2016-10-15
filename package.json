@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "author": "MakeAwesomeHappen",
+  "version": "1.3.0",
+  "author": "Christian Reinbacher",
   "private": true,
   "dependencies": {},
   "keywords": [
@@ -9,7 +9,14 @@
   "pebble": {
     "sdkVersion": "3",
     "resources": {
-      "media": []
+      "media": [
+        {
+          "name": "IMAGE_LOGO",
+          "file": "logo.png",
+          "type": "bitmap",
+          "menuIcon": true
+        }
+      ]
     },
     "projectType": "native",
     "uuid": "5a2fe8b5-42d7-4462-b234-25e03ac2fffc",
@@ -17,7 +24,7 @@
       "dummy": 0
     },
     "enableMultiJS": true,
-    "displayName": "Strider",
+    "displayName": "StriderHR",
     "watchapp": {
       "onlyShownOnCommunication": false,
       "hiddenApp": false,
