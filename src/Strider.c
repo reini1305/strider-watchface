@@ -16,6 +16,24 @@ static int s_step_count = 0, s_step_goal = 0, s_step_average = 0;
 GColor color_loser;
 GColor color_winner;
 
+void unobstructed_change(AnimationProgress progress, void* data) {
+  GRect window_bounds = layer_get_bounds(window_get_root_layer(s_window));
+  GRect unobstructed_bounds = layer_get_unobstructed_bounds(window_get_root_layer(s_window));
+  // move everything up by half the obstruction
+  int offset_from_bottom = (window_bounds.size.h - unobstructed_bounds.size.h) / 2;
+  window_bounds.size.h-=offset_from_bottom;
+  // update layer positions
+  #if defined(PBL_PLATFORM_DIORITE)
+  layer_set_frame(text_layer_get_layer(s_hrm_layer),GRect(0, window_bounds.size.h/2+12, window_bounds.size.w, 38));
+  #endif
+#ifdef PBL_PLATFORM_EMERY
+  layer_set_frame(text_layer_get_layer(s_hrm_layer),GRect(0, window_bounds.size.h/2+20, window_bounds.size.w, 38));
+  layer_set_frame(text_layer_get_layer(s_time_layer),GRect(0, window_bounds.size.h/2-24, window_bounds.size.w, 42));
+#else
+  layer_set_frame(text_layer_get_layer(s_time_layer),GRect(0, window_bounds.size.h/2-19, window_bounds.size.w, 38));
+#endif
+  layer_set_frame(text_layer_get_layer(s_step_layer),GRect(0, window_bounds.size.h/2-43, window_bounds.size.w, 38));
+}
 
 // Is step data available?
 bool step_data_is_available() {
@@ -30,6 +48,7 @@ static void get_step_goal() {
   const time_t end = start + SECONDS_PER_DAY;
   s_step_goal = (int)health_service_sum_averaged(HealthMetricStepCount,
     start, end, HealthServiceTimeScopeDaily);
+  //APP_LOG(APP_LOG_LEVEL_DEBUG,"Step goal: %d",s_step_goal);
 }
 
 // Todays current step count
@@ -40,7 +59,7 @@ static void get_step_count() {
 // Current heart rate
 static void get_hr() {
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_DIORITE)
-  s_hr = (int)health_service_peek_current_value(HealthMetricHeartRateBPM);
+  s_hr = 100;//(int)health_service_peek_current_value(HealthMetricHeartRateBPM);
 #endif
 }
 
@@ -50,6 +69,9 @@ static void get_step_average() {
   const time_t end = time(NULL);
   s_step_average = (int)health_service_sum_averaged(HealthMetricStepCount,
     start, end, HealthServiceTimeScopeDaily);
+  if(s_step_average>s_step_goal)
+    s_step_average=s_step_goal;
+  //APP_LOG(APP_LOG_LEVEL_DEBUG,"Step average: %d",s_step_average);
 }
 
 static void display_step_count() {
@@ -106,7 +128,7 @@ static void health_handler(HealthEventType event, void *context) {
 
 static void tick_handler(struct tm *tick_time, TimeUnits changed) {
   strftime(s_current_time_buffer, sizeof(s_current_time_buffer),
-           clock_is_24h_style() ? "%H:%M" : "%l:%M", tick_time);
+           clock_is_24h_style() ? "%H:%M" : "%I:%M", tick_time);
 
   text_layer_set_text(s_time_layer, s_current_time_buffer);
 }
@@ -152,7 +174,8 @@ static void average_layer_update_proc(Layer *layer, GContext *ctx) {
 }
 
 static void window_load(Window *window) {
-  GRect window_bounds = layer_get_bounds(s_window_layer);
+  GRect window_bounds = layer_get_bounds(window_get_root_layer(window));
+  GRect unobstructed_bounds = layer_get_unobstructed_bounds(window_get_root_layer(window));
 
   // Dots for the progress indicator
   s_dots_layer = layer_create(window_bounds);
@@ -169,13 +192,27 @@ static void window_load(Window *window) {
   layer_set_update_proc(s_average_layer, average_layer_update_proc);
   layer_add_child(s_window_layer, s_average_layer);
 
+  // move everything up by half the obstruction
+  int offset_from_bottom = (window_bounds.size.h - unobstructed_bounds.size.h) / 2;
+  window_bounds.size.h-=offset_from_bottom;
+
   // Create a layer to hold the current time
+#ifdef PBL_PLATFORM_EMERY
+  s_time_layer = text_layer_create(
+    GRect(0, window_bounds.size.h/2-24, window_bounds.size.w, 42));
+#else
   s_time_layer = text_layer_create(
       GRect(0, window_bounds.size.h/2-19, window_bounds.size.w, 38));
+#endif
   text_layer_set_text_color(s_time_layer, GColorWhite);
   text_layer_set_background_color(s_time_layer, GColorClear);
+#ifdef PBL_PLATFORM_EMERY
+  text_layer_set_font(s_time_layer,
+                    fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
+#else
   text_layer_set_font(s_time_layer,
                       fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
+#endif
   text_layer_set_text_alignment(s_time_layer, GTextAlignmentCenter);
   layer_add_child(s_window_layer, text_layer_get_layer(s_time_layer));
 
@@ -190,8 +227,13 @@ static void window_load(Window *window) {
 
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_DIORITE)
   // Create a layer to hold the current heart rate
+#ifdef PBL_PLATFORM_EMERY
   s_hrm_layer = text_layer_create(
-      GRect(0, window_bounds.size.h/2+12, window_bounds.size.w, 38));
+      GRect(0, window_bounds.size.h/2+20, window_bounds.size.w, 38));
+#else
+s_hrm_layer = text_layer_create(
+    GRect(0, window_bounds.size.h/2+12, window_bounds.size.w, 38));
+#endif
   text_layer_set_background_color(s_hrm_layer, GColorClear);
   text_layer_set_text_color(s_hrm_layer, GColorWhite);
   text_layer_set_font(s_hrm_layer,
@@ -225,6 +267,13 @@ void init() {
     .load = window_load,
     .unload = window_unload
   });
+
+  UnobstructedAreaHandlers handlers = {
+    // .will_change = unobstructed_will_change,
+    .change = unobstructed_change
+    // .did_change = unobstructed_did_change
+  };
+  unobstructed_area_service_subscribe(handlers, NULL);
 
   window_stack_push(s_window, true);
 
