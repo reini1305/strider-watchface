@@ -46,8 +46,7 @@ bool step_data_is_available() {
 static void get_step_goal() {
   const time_t start = time_start_of_today();
   const time_t end = start + SECONDS_PER_DAY;
-  s_step_goal = (int)health_service_sum_averaged(HealthMetricStepCount,
-    start, end, HealthServiceTimeScopeDaily);
+  s_step_goal = (int)health_service_sum_averaged(HealthMetricStepCount, start, end, HealthServiceTimeScopeDaily);
   //APP_LOG(APP_LOG_LEVEL_DEBUG,"Step goal: %d",s_step_goal);
 }
 
@@ -59,7 +58,7 @@ static void get_step_count() {
 // Current heart rate
 static void get_hr() {
 #if defined(PBL_PLATFORM_EMERY) || defined(PBL_PLATFORM_DIORITE)
-  s_hr = 100;//(int)health_service_peek_current_value(HealthMetricHeartRateBPM);
+  s_hr = (int)health_service_peek_current_value(HealthMetricHeartRateBPM);
 #endif
 }
 
@@ -67,8 +66,7 @@ static void get_hr() {
 static void get_step_average() {
   const time_t start = time_start_of_today();
   const time_t end = time(NULL);
-  s_step_average = (int)health_service_sum_averaged(HealthMetricStepCount,
-    start, end, HealthServiceTimeScopeDaily);
+  s_step_average = (int)health_service_sum_averaged(HealthMetricStepCount, start, end, HealthServiceTimeScopeDaily);
   if(s_step_average>s_step_goal)
     s_step_average=s_step_goal;
   //APP_LOG(APP_LOG_LEVEL_DEBUG,"Step average: %d",s_step_average);
